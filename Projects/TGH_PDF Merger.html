@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Merger</title>
+  <!-- Load Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Load pdf-lib library for PDF manipulation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <style>
+    /* Custom styles for the hidden default file input and its custom-styled label */
+    .custom-file-input {
+      display: none; /* Hide the actual file input */
+    }
+
+    .custom-file-label {
+      display: inline-flex; /* Use flex for centering icon and text */
+      align-items: center;
+      gap: 0.5rem; /* Space between icon and text */
+      padding: 12px 24px;
+      cursor: pointer;
+      background-color: #4F46E5; /* Tailwind indigo-600 */
+      color: white;
+      border-radius: 8px; /* Rounded corners */
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      font-weight: 600; /* Semi-bold font */
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    }
+
+    .custom-file-label:hover {
+      background-color: #4338CA; /* Tailwind indigo-700 on hover */
+      transform: translateY(-2px); /* Slight lift effect on hover */
+    }
+
+    .custom-file-label:active {
+      transform: translateY(0); /* Reset on click */
+    }
+
+    /* General body styling for centering and background */
+    body {
+      font-family: 'Inter', sans-serif; /* Apply Inter font */
+      background-color: #1a202c; /* Dark background color */
+      color: #e2e8f0; /* Light text color for contrast */
+      display: flex;
+      justify-content: center; /* Center content horizontally */
+      align-items: center; /* Center content vertically */
+      min-height: 100vh; /* Ensure it takes full viewport height */
+      margin: 0; /* Remove default body margin */
+    }
+  </style>
+</head>
+
+<body class="bg-gray-900 text-white font-sans">
+  <div class="container bg-gray-800 p-8 rounded-lg shadow-xl max-w-lg w-full mx-4">
+    <h2 class="text-3xl font-bold mb-6 text-center text-teal-400">Merge PDFs into One</h2>
+
+    <div class="mb-6 text-center">
+      <label for="pdfInput" class="custom-file-label">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+        </svg>
+        Choose PDF Files
+      </label>
+      <input type="file" id="pdfInput" multiple accept="application/pdf" class="custom-file-input">
+      <p id="selectedFilesCount" class="mt-2 text-sm text-gray-400"></p>
+    </div>
+
+    <button id="mergeButton" onclick="mergePDFs()"
+      class="w-full py-3 px-6 bg-gradient-to-r from-green-500 to-teal-500 text-white font-bold rounded-lg shadow-md hover:from-green-600 hover:to-teal-600 transition transform hover:scale-105 duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+      Merge and Download
+    </button>
+
+    <div id="status" class="mt-4 text-sm text-gray-300 text-center"></div>
+  </div>
+
+  <script>
+    // Function to update the display showing how many files are selected
+    function updateSelectedFilesCount() {
+      const input = document.getElementById('pdfInput');
+      const countDisplay = document.getElementById('selectedFilesCount');
+      if (input.files && input.files.length > 0) {
+        countDisplay.textContent = `${input.files.length} file(s) selected.`;
+      } else {
+        countDisplay.textContent = ''; // Clear text if no files are selected
+      }
+    }
+
+    // Add event listener to the file input to update the count and clear status when files change
+    document.getElementById('pdfInput').addEventListener('change', () => {
+      updateSelectedFilesCount();
+      document.getElementById('status').textContent = ''; // Clear previous status messages
+      document.getElementById('status').className = 'mt-4 text-sm text-gray-300 text-center'; // Reset status styling
+    });
+
+    // Initial call to set count (useful if files were somehow pre-selected, though rare for file inputs)
+    updateSelectedFilesCount();
+
+    // Asynchronous function to handle PDF merging and downloading
+    async function mergePDFs() {
+      const input = document.getElementById('pdfInput');
+      const button = document.getElementById('mergeButton');
+      const status = document.getElementById('status');
+
+      // Input validation: Check if any files are selected
+      if (!input.files || input.files.length === 0) {
+        status.innerHTML = '<span class="text-red-400">Please select PDF files to merge.</span>';
+        return;
+      }
+      // Input validation: Ensure at least two files are selected for merging
+      if (input.files.length < 2) {
+        status.innerHTML = '<span class="text-red-400">Please select at least two PDF files.</span>';
+        return;
+      }
+
+      // Disable the merge button to prevent multiple clicks and show progress
+      button.disabled = true;
+      status.textContent = 'Merging PDFs... Please wait.';
+      status.classList.remove('text-red-400', 'text-green-400'); // Remove previous status colors
+      status.classList.add('text-yellow-400'); // Set color for processing status
+
+      try {
+        // Create a new blank PDF document using pdf-lib
+        const pdfDoc = await PDFLib.PDFDocument.create();
+        let processedFiles = 0; // Counter for processed files
+
+        // Loop through each selected PDF file
+        for (let file of input.files) {
+          try {
+            // Read the file as an ArrayBuffer
+            const arrayBuffer = await file.arrayBuffer();
+            // Load the PDF document from the ArrayBuffer
+            const loadedPdf = await PDFLib.PDFDocument.load(arrayBuffer);
+            // Copy all pages from the loaded PDF to the new merged PDF document
+            const copiedPages = await pdfDoc.copyPages(loadedPdf, loadedPdf.getPageIndices());
+            // Add each copied page to the new merged PDF
+            copiedPages.forEach(page => pdfDoc.addPage(page));
+            processedFiles++;
+            // Update status to show progress
+            status.textContent = `Merging PDFs... (${processedFiles}/${input.files.length})`;
+          } catch (fileError) {
+            // Log and display error if a specific file cannot be processed
+            console.error(`Error processing file ${file.name}:`, fileError);
+            status.innerHTML = `<span class="text-red-400">Error processing ${file.name}: ${fileError.message}</span>`;
+            button.disabled = false; // Re-enable button on error
+            status.classList.remove('text-yellow-400');
+            status.classList.add('text-red-400'); // Set error color
+            return; // Stop the merging process if any file fails
+          }
+        }
+
+        // Save the merged PDF document to bytes
+        status.textContent = 'Saving merged PDF...';
+        let mergedPdfBytes;
+        try {
+          mergedPdfBytes = await pdfDoc.save();
+        } catch (saveError) {
+          throw new Error('Failed to save merged PDF: ' + saveError.message);
+        }
+
+        // Prepare and trigger the download of the merged PDF
+        status.textContent = 'Preparing download...';
+        try {
+          // Create a Blob from the PDF bytes
+          const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+          // Create a temporary anchor element for download
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob); // Create a URL for the Blob
+          link.download = `merged_pdfs_${new Date().toISOString().slice(0,10)}.pdf`; // Set download file name
+          document.body.appendChild(link); // Append link to DOM (required for Firefox)
+          link.click(); // Programmatically click the link to trigger download
+          document.body.removeChild(link); // Clean up the temporary link
+          URL.revokeObjectURL(link.href); // Release the object URL to free memory
+          status.textContent = 'Merge completed successfully! File is downloading.';
+          status.classList.remove('text-yellow-400', 'text-red-400');
+          status.classList.add('text-green-400'); // Set success color
+        } catch (downloadError) {
+          throw new Error('Failed to initiate download: ' + downloadError.message);
+        }
+
+      } catch (error) {
+        // Catch any general errors during the merge process
+        console.error('Merge error:', error);
+        status.innerHTML = '<span class="text-red-400">Error: ' + error.message + '</span>';
+        status.classList.remove('text-yellow-400');
+        status.classList.add('text-red-400'); // Set error color
+      } finally {
+        // Ensure the button is re-enabled regardless of success or failure
+        button.disabled = false;
+      }
+    }
+  </script>
+</body>
+
+</html>

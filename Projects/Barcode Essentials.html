@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Office Tools Center (Upgraded)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <style>
+  body {
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(to bottom right, #e0eafc, #cfdef3);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+  }
+  header {
+    background: linear-gradient(to right, #1e3c72, #2a5298);
+    color: white;
+    padding: 1rem;
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  }
+  nav {
+    display: flex;
+    justify-content: center;
+    background: #34495e;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  }
+  nav button {
+    background: none;
+    border: none;
+    color: white;
+    padding: 1rem 2rem;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.3s;
+  }
+  nav button:hover {
+    background: #2c3e50;
+    transform: translateY(-2px);
+  }
+  nav button.active-nav {
+    background: #1abc9c;
+    color: white;
+    border-bottom: 3px solid #16a085;
+  }
+  .container {
+    background: #f0f4f8;
+    margin: 30px auto;
+    padding: 30px;
+    border-radius: 12px;
+    max-width: 900px;
+    box-shadow: 0.Cartesian 8px 20px rgba(0,0,0,0.2);
+    animation: fadeInContainer 0.6s ease;
+  }
+  @keyframes fadeInContainer {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .section {
+    display: none;
+    padding-top: 10px;
+    animation: fade 0.5s;
+  }
+  .active {
+    display: block;
+  }
+  @keyframes fade {
+    from {opacity: 0;}
+    to {opacity: 1;}
+  }
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #2c3e50;
+    font-size: 26px;
+  }
+  label {
+    font-weight: 600;
+    color: #2c3e50;
+  }
+  input, textarea, select {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0 20px 0;
+    background: #d6e4f0;
+    border: 1px solid #aac4e4;
+    border-radius: 6px;
+    font-size: 16px;
+    box-sizing: border-box;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    color: #2c3e50;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: #1abc9c;
+    box-shadow: 0 0 8px rgba(26, 188, 156, 0.4);
+    outline: none;
+  }
+  button.primary {
+    background: #1abc9c;
+    color: white;
+    padding: 12px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    margin-top: 10px;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.3s;
+  }
+  button.primary:hover {
+    background: #16a085;
+    transform: translateY(-2px);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: #d6e4f0;
+  }
+  table, th, td {
+    border: 1px solid #aac4e4;
+  }
+  th, td {
+    padding: 12px;
+    text-align: center;
+    color: #2c3e50;
+  }
+  th {
+    background: #b0c4de;
+    font-weight: 600;
+  }
+  .download-btn {
+    display: none;
+    text-decoration: none;
+    background: #3498db;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 20px;
+    transition: background 0.3s;
+  }
+  .download-btn:hover {
+    background: #2980b9;
+  }
+  .loader {
+    display: none;
+    text-align: center;
+    font-size: 18px;
+    color: #3498db;
+    margin: 20px 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>✨ Office Tools Center (Upgraded)</h1>
+</header>
+
+<nav>
+  <button onclick="showSection('expiration', this)" class="active-nav">Expiration Calculator</button>
+  <button onclick="showSection('days', this)">Days Converter</button>
+  <button onclick="showSection('months', this)">Months Converter</button>
+  <!--<button onclick="showSection('excel', this)">Excel Sorter</button>-->
+</nav>
+
+<div class="container">
+
+  <!-- Expiration Date Calculator -->
+  <div id="expiration" class="section active">
+    <h2>Expiration Date Calculator</h2>
+    <label>MFD (Manufacturing Date):</label>
+    <input type="date" id="mfd">
+    <label>Shelf Life (days):</label>
+    <input type="number" id="shelf-life" min="1">
+    <label>Output Format:</label>
+    <select id="date-format">
+      <option value="DMY">DD-MM-YYYY</option>
+      <option value="YMD">YYYY-MM-DD</option>
+    </select>
+    <button class="primary" onclick="calculateExpiration()">Calculate Expiration</button>
+    <div id="result" style="font-weight:bold; margin-top:15px;"></div>
+  </div>
+
+  <!-- Days to Months Converter -->
+  <div id="days" class="section">
+    <h2>Days to Months Converter</h2>
+    <textarea id="daysInput" placeholder="Enter days separated by commas or new lines..."></textarea>
+    <button class="primary" onclick="convertDays()">Convert</button>
+    <a id="download-days" class="download-btn" download="days_to_months.xlsx">Download as Excel</a>
+    <div id="outputTable" class="output"></div>
+  </div>
+
+  <!-- Months to Days Converter -->
+  <div id="months" class="section">
+    <h2>Months to Days Converter</h2>
+    <textarea id="monthsInput" placeholder="Enter months separated by commas or new lines..."></textarea>
+    <button class="primary" onclick="convertMonths()">Convert</button>
+    <a id="download-months" class="download-btn" download="months_to_days.xlsx">Download as Excel</a>
+    <div id="monthsOutputTable" class="output"></div>
+  </div>
+
+  <!-- Excel Sorter -->
+  <!--<div id="excel" class="section">
+    <h2>Excel Order Sorter</h2>
+    <p>Upload your Excel file to sort rows by <code>Sxxxxx</code> in Order ID</p>
+    <input type="file" id="upload" accept=".xlsx,.xls">
+    <div class="loader" id="loader">Processing...</div>
+    <a id="download" class="download-btn" download="sorted_orders.xlsx">Download Sorted Excel</a>
+  </div>-->
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+  function showSection(id, btn) {
+    document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+    document.querySelector(`#${id}`).classList.add('active');
+    document.querySelectorAll('nav button').forEach(button => button.classList.remove('active-nav'));
+    btn.classList.add('active-nav');
+  }
+
+  function calculateExpiration() {
+    const mfd = document.getElementById("mfd").value;
+    const shelfLife = document.getElementById("shelf-life").value;
+    const format = document.getElementById("date-format").value;
+
+    if (!mfd || !shelfLife) {
+      alert("Please fill all fields!");
+      return;
+    }
+
+    const mfdDate = new Date(mfd);
+    const expiration = new Date(mfdDate);
+    expiration.setDate(expiration.getDate() + parseInt(shelfLife));
+
+    let formattedDate = '';
+    if (format === "DMY") {
+      formattedDate = `${String(expiration.getDate()).padStart(2,'0')}-${String(expiration.getMonth()+1).padStart(2,'0')}-${expiration.getFullYear()}`;
+    } else {
+      formattedDate = `${expiration.getFullYear()}-${String(expiration.getMonth()+1).padStart(2,'0')}-${String(expiration.getDate()).padStart(2,'0')}`;
+    }
+
+    document.getElementById("result").textContent = `Expiration Date: ${formattedDate}`;
+  }
+
+  function convertDays() {
+    const input = document.getElementById('daysInput').value;
+    const daysArray = input.split(/\n|,/).map(x => x.trim()).filter(x => x);
+
+    if (daysArray.length === 0) {
+      alert("Please enter some days!");
+      return;
+    }
+
+    let html = '<table><tr><th>Days</th><th>Months (Approx.)</th></tr>';
+    const sheetData = [];
+
+    daysArray.forEach(day => {
+      const months = (parseInt(day) / 30).toFixed(1);
+      html += `<tr><td>${day}</td><td>${months} months</td></tr>`;
+      sheetData.push({ Days: day, Months: months });
+    });
+
+    html += '</table>';
+    document.getElementById('outputTable').innerHTML = html;
+
+    const ws = XLSX.utils.json_to_sheet(sheetData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Days to Months');
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const link = document.getElementById('download-days');
+    link.href = url;
+    link.style.display = 'block';
+
+    document.getElementById('daysInput').value = '';
+  }
+
+  document.getElementById('daysInput').addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      convertDays();
+    }
+  });
+
+  function convertMonths() {
+    const input = document.getElementById('monthsInput').value;
+    const monthsArray = input.split(/\n|,/).map(x => x.trim()).filter(x => x);
+
+    if (monthsArray.length === 0) {
+      alert("Please enter some months!");
+      return;
+    }
+
+    let html = '<table><tr><th>Months</th><th>Days (Approx.)</th></tr>';
+    const sheetData = [];
+
+    monthsArray.forEach(month => {
+      const days = (parseFloat(month) * 30).toFixed(0);
+      html += `<tr><td>${month}</td><td>${days} days</td></tr>`;
+      sheetData.push({ Months: month, Days: days });
+    });
+
+    html += '</table>';
+    document.getElementById('monthsOutputTable').innerHTML = html;
+
+    const ws = XLSX.utils.json_to_sheet(sheetData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Months to Days');
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const link = document.getElementById('download-months');
+    link.href = url;
+    link.style.display = 'block';
+
+    document.getElementById('monthsInput').value = '';
+  }
+
+  document.getElementById('monthsInput').addEventListener('keydown', function(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      convertMonths();
+    }
+  });
+
+  document.getElementById('upload').addEventListener('change', async (e) => {
+    const loader = document.getElementById('loader');
+    loader.style.display = 'block';
+
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data);
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(worksheet);
+
+    const extractSortKey = (id) => {
+      const match = String(id).match(/(S\d{1,6})/);
+      return match ? 'S' + match[1].slice(1).padStart(6,'0') : 'ZZZZZZ';
+    };
+
+    const grouped = {};
+    json.forEach(row => {
+      const courier = row['Courier Company'] || 'Unknown';
+      if (!grouped[courier]) grouped[courier] = [];
+      grouped[courier].push(row);
+    });
+
+    const finalSorted = [];
+    Object.keys(grouped).sort().forEach(courier => {
+      const sortedGroup = grouped[courier].sort((a,b) => extractSortKey(a['Order ID']).localeCompare(extractSortKey(b['Order ID'])));
+      finalSorted.push(...sortedGroup);
+    });
+
+    const newSheet = XLSX.utils.json_to_sheet(finalSorted);
+    const newWb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(newWb, newSheet, 'Sorted Orders');
+    const wbout = XLSX.write(newWb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+
+    const downloadLink = document.getElementById('download');
+    downloadLink.href = url;
+    downloadLink.style.display = 'block';
+    loader.style.display = 'none';
+
+    document.getElementById('upload').value = '';
+  });
+</script>
+
+</body>
+</html>

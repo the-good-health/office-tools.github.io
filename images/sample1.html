@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.9/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-teal-900 to-gray-900 min-h-screen flex items-center justify-center">
+  <div id="root"></div>
+  <script type="text/babel">
+    const users = [
+      { username: "admin", email: "admin@thegoodhealth.co.in", password: "admin123" },
+      { username: "user1", email: "user1@thegoodhealth.co.in", password: "user123" },
+      { username: "user2", email: "user2@thegoodhealth.co.in", password: "user456" },
+    ];
+
+    const projects = [
+      { name: "Product Finder", icon: "🔍", bgColor: "bg-orange-500", link: "C:/Users/USER/Desktop/Applications/Projects/Products Verification.HTML" },
+      { name: "Source Number Finder", icon: "📅", bgColor: "bg-blue-500", link: "C:/Users/USER/Desktop/Applications/Projects/Source Number Finder.html" },
+      { name: "Barcode Tools", icon: "🕒", bgColor: "bg-teal-500", link: "C:/Users/USER/Desktop/Applications/Projects/Barcode Essentials.html" },
+      { name: "PDF Merger", icon: "📝", bgColor: "bg-purple-500", link: "C:/Users/USER/Desktop/Applications/Projects/TGH_PDF Merger.html" },
+      { name: "Email Generator", icon: "📚", bgColor: "bg-green-500", link: "C:/Users/USER/Desktop/Applications/Projects/gmail generator.html" },
+      { name: "Contacts", icon: "📇", bgColor: "bg-pink-500", link: "/contacts" },
+      { name: "Frontdesk", icon: "👥", bgColor: "bg-indigo-500", link: "/frontdesk" },
+       { name: "CRM", icon: "🤝", bgColor: "bg-yellow-500", link: "/crm" },
+       {name: "Dashboards", icon: "📊", bgColor: "bg-red-500", link: "/dashboards" },
+       { name: "Documents", icon: "📄", bgColor: "bg-cyan-500", link: "/documents" },
+       { name: "Timesheets", icon: "⏰", bgColor: "bg-orange-400", link: "/timesheets" },
+       { name: "Planning", icon: "📋", bgColor: "bg-blue-400", link: "/planning" },
+       { name: "Helpdesk", icon: "🆘", bgColor: "bg-green-400", link: "/helpdesk" },
+       { name: "Website", icon: "🌐", bgColor: "bg-purple-400", link: "/website" },
+       { name: "Social Marketing", icon: "❤️", bgColor: "bg-pink-400", link: "/social-marketing" },
+       { name: "Marketing Autom...", icon: "📈", bgColor: "bg-teal-400", link: "/marketing-automation" },
+       { name: "Email Marketing", icon: "📧", bgColor: "bg-indigo-400", link: "/email-marketing" },
+       { name: "SMS Marketing", icon: "📩", bgColor: "bg-red-400", link: "/sms-marketing" },
+       { name: "Quality", icon: "✅", bgColor: "bg-blue-600", link: "/quality" },
+       { name: "Barcode", icon: "📷", bgColor: "bg-gray-500", link: "/barcode" },
+       { name: "Maintenance", icon: "🛠️", bgColor: "bg-yellow-400", link: "/maintenance" },
+       { name: "Employees", icon: "👥", bgColor: "bg-green-600", link: "/employees" },
+       { name: "Attendance", icon: "📅", bgColor: "bg-purple-600", link: "/attendance" },
+       { name: "Time Off", icon: "🏖️", bgColor: "bg-orange-600", link: "/time-off" },
+       { name: "Expenses", icon: "💸", bgColor: "bg-teal-600", link: "/expenses" },
+       { name: "Live Chat", icon: "💬", bgColor: "bg-pink-600", link: "/live-chat" },
+       { name: "Inventory", icon: "📦", bgColor: "bg-indigo-600", link: "/inventory" },
+       { name: "Sales", icon: "📈", bgColor: "bg-red-600", link: "/sales" },
+       { name: "Point of Sale", icon: "🛒", bgColor: "bg-blue-700", link: "/point-of-sale" },
+       { name: "Cleaning", icon: "🧹", bgColor: "bg-purple-700", link: "/cleaning" },
+       { name: "WhatsApp", icon: "📱", bgColor: "bg-green-700", link: "/whatsapp" },
+       { name: "Apps", icon: "🖥️", bgColor: "bg-teal-700", link: "/apps" },
+       { name: "Settings", icon: "⚙️", bgColor: "bg-gray-600", link: "/settings" },
+    ];
+
+    const ProjectCard = ({ project }) => {
+      return (
+        <a href={project.link} className="bg-gray-800 rounded-lg p-4 flex flex-col items-center justify-center h-32 w-32 hover:bg-gray-700 transition">
+          <div className={`text-3xl ${project.bgColor} rounded-full p-3 text-white`}>
+            {project.icon}
+          </div>
+          <p className="text-white text-sm mt-2 text-center">{project.name}</p>
+        </a>
+      );
+    };
+
+    const Login = ({ onLogin }) => {
+      const [email, setEmail] = React.useState("");
+      const [password, setPassword] = React.useState("");
+      const [error, setError] = React.useState("");
+
+      const handleLogin = (e) => {
+        e.preventDefault();
+        const user = users.find(
+          (u) => (u.email === email || u.username === email) && u.password === password
+        );
+        if (user) {
+          onLogin(user);
+        } else {
+          setError("Invalid email/username or password");
+        }
+      };
+
+      return (
+        <div className="flex flex-col items-center justify-center h-screen" >
+          <img
+            src="C:/Users/USER/Desktop/Applications/images/thegoodhealth.png"
+            alt="The Good Health Logo"
+            className="h-12 mb-8 absolute top-6 left-6"
+            
+          />
+          <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-96">
+            <h2 className="text-2xl text-white mb-6 text-center">Login</h2>
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder="Email or Username"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full p-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full p-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+              <button
+                onClick={handleLogin}
+                className="w-full p-2 bg-teal-500 text-white rounded hover:bg-teal-600 transition"
+              >
+                Login
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const Dashboard = ({ user, onLogout }) => {
+      return (
+        <div className="container mx-auto p-6 relative">
+          <img
+            src="C:/Users/USER/Desktop/Applications/images/thegoodhealth.png"
+            alt="The Good Health Logo"
+            className="h-10 absolute top-4 left-4"
+          />
+          <div className="absolute top-4 right-4 flex items-center space-x-2">
+            <span className="text-white">{user.email}</span>
+            <button
+              onClick={onLogout}
+              className="p-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+            >
+              Logout
+            </button>
+          </div>
+          <div className="grid grid-cols-6 gap-4 mt-12">
+            {projects.map((project, index) => (
+              <ProjectCard key={index} project={project} />
+            ))}
+          </div>
+        </div>
+      );
+    };
+
+    const App = () => {
+      const [user, setUser] = React.useState(null);
+
+      const handleLogin = (user) => {
+        setUser(user);
+      };
+
+      const handleLogout = () => {
+        setUser(null);
+      };
+
+      return (
+        <>
+          {user ? (
+            <Dashboard user={user} onLogout={handleLogout} />
+          ) : (
+            <Login onLogin={handleLogin} />
+          )}
+        </>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

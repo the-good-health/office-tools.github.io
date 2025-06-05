@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Expiry Date Calculator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Choices.js for searchable dropdown -->
+  <link href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+  <style>
+    @keyframes fadeInScale {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .modal {
+      animation: fadeInScale 0.3s ease-out forwards;
+    }
+
+    .choices__inner {
+      padding: 0.5rem !important;
+      border-radius: 0.5rem !important;
+      border: 1px solid #d1d5db !important;
+    }
+
+    .choices__list--dropdown {
+      border-radius: 0.5rem !important;
+      border: 1px solid #d1d5db !important;
+    }
+  </style>
+</head>
+
+<body class="bg-gradient-to-r from-blue-100 to-purple-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md transform transition-all hover:scale-105">
+    <h1 class="text-3xl font-extrabold mb-6 text-center text-blue-700">Expiry Date Calculator</h1>
+    <div id="form-container">
+      <div class="mb-4">
+        <label for="productName" class="block text-sm font-medium text-gray-700">Product Name</label>
+        <select id="productName"
+          class="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+          <option value="">Select a product</option>
+        </select>
+      </div>
+      <div class="mb-4">
+        <label for="weight" class="block text-sm font-medium text-gray-700">Weight (g)</label>
+        <select id="weight"
+          class="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+          <option value="">Select weight</option>
+        </select>
+      </div>
+      <div class="mb-4">
+        <label for="mfd" class="block text-sm font-medium text-gray-700">Manufacturing Date (MFD)</label>
+        <input type="date" id="mfd"
+          class="mt-1 block w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+      </div>
+      <button id="calculateBtn"
+        class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-colors font-semibold">Calculate
+        Expiry Date</button>
+    </div>
+    <div id="error" class="mt-4 text-red-500 text-center hidden"></div>
+  </div>
+
+  <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white p-8 rounded-xl shadow-2xl max-w-lg w-full modal">
+      <h2 class="text-2xl font-bold text-blue-700 mb-4 text-center">Expiry Date</h2>
+      <p id="expiryResult" class="text-2xl font-semibold text-gray-800 text-center leading-relaxed"></p>
+      <button id="closeModalBtn"
+        class="mt-6 w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-colors font-semibold">Close</button>
+    </div>
+  </div>
+
+  <script>
+    // Sample product data with shelf life in months (first few are cookies ending with "Cookies")
+    const products = [
+      {
+        "name": "High Protein Jowar Cookies",
+        "weight": 350.0,
+        "shelfLifeMonths": 4
+      },
+      {
+        "name": "High Protein Multi Millet Cookies",
+        "weight": 350.0,
+        "shelfLifeMonths": 4
+      },
+      {
+        "name": "Bajra Cookies",
+        "weight": 350.0,
+        "shelfLifeMonths": 4
+      },
+      {
+        "name": "Iron Chocolates",
+        "weight": 250.0,
+        "shelfLifeMonths": 2
+      },
+      {
+        "name": "Protein Nutri Bites",
+        "weight": 250.0,
+        "shelfLifeMonths": 1
+      },
+      {
+        "name": "Kaju Barfi",
+        "weight": 250.0,
+        "shelfLifeMonths": 1
+      },
+      {
+        "name": "Millet Health Mix",
+        "weight": 500.0,
+        "shelfLifeMonths": 3
+      },
+      {
+        "name": "Multi Grain Atta",
+        "weight": 500.0,
+        "shelfLifeMonths": 4
+      },
+      {
+        "name": "Sprouted Ragi Malt",
+        "weight": 500.0,
+        "shelfLifeMonths": 4
+      },
+      {
+        "name": "Multi Floral Bath Powder",
+        "weight": 500.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "100% Cotton Towels",
+        "weight": 310.0,
+        "shelfLifeMonths": 9999
+      },
+      {
+        "name": "Moringa Hair Oil",
+        "weight": 100.0,
+        "shelfLifeMonths": 24
+      },
+      {
+        "name": "Moringa Pain relief Oil",
+        "weight": 100.0,
+        "shelfLifeMonths": 24
+      },
+      {
+        "name": "Sprouted Maize Flakes",
+        "weight": 400.0,
+        "shelfLifeMonths": 3
+      },
+      {
+        "name": "Sprouted Ragi Flakes",
+        "weight": 400.0,
+        "shelfLifeMonths": 3
+      },
+      {
+        "name": "Sprouted Red Rice Flakes Crispy",
+        "weight": 400.0,
+        "shelfLifeMonths": 3
+      },
+      {
+        "name": "Sprouted Jowar Flakes",
+        "weight": 400.0,
+        "shelfLifeMonths": 3
+      },
+      {
+        "name": "Black Rice Flakes Sprouted",
+        "weight": 400.0,
+        "shelfLifeMonths": 3
+      },
+      {
+        "name": "Traditional Rice Porridge",
+        "weight": 500.0,
+        "shelfLifeMonths": 3
+      },
+      {
+        "name": "Sprouted Black Urad Dal Split 1kg (Skinned)",
+        "weight": 1000.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Sprouted Black Urad Dal Whole 1kg (Skinned)",
+        "weight": 1000.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Sprouted Tur Dal Split (Deskinned)",
+        "weight": 1000.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Sprouted White Urad Dal Split 1kg (Deskinned)",
+        "weight": 1000.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Sprouted White Urad Dal Whole 1kg (Deskinned)",
+        "weight": 1000.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Sand Roasted 5 in 1 Seed Mix",
+        "weight": 250.0,
+        "shelfLifeMonths": 3
+      },
+      {
+        "name": "Sand Roasted Flax Seeds",
+        "weight": 250.0,
+        "shelfLifeMonths": 3
+      },
+      {
+        "name": "Sand Roasted Pumpkin Seeds",
+        "weight": 250.0,
+        "shelfLifeMonths": 3
+      },
+      {
+        "name": "Sand Roasted Sun Flower Seeds 250",
+        "weight": 250.0,
+        "shelfLifeMonths": 3
+      },
+      {
+        "name": "Sprouted Jowar Idly/Upma Rava",
+        "weight": 400.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Sprouted Foxtail Idly/Upma Rava",
+        "weight": 400.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Organic Palm Jaggery",
+        "weight": 500.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "Organic Cane Jaggery",
+        "weight": 500.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "Lakadong Turmeric Powder",
+        "weight": 200.0,
+        "shelfLifeMonths": 24
+      },
+      {
+        "name": "Nadia Ginger Powder",
+        "weight": 100.0,
+        "shelfLifeMonths": 24
+      },
+      {
+        "name": "Butterfly Pea Flowers",
+        "weight": 30.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Paneer Rose Petals",
+        "weight": 30.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Paneer Rose Powder",
+        "weight": 50.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Moringa Dip Soup",
+        "weight": 2000.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "Organic Green Gram",
+        "weight": 500.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "Sprout Activated Green Gram Split (Skinned)",
+        "weight": 500.0,
+        "shelfLifeMonths": 4
+      },
+      {
+        "name": "Moringa Powder",
+        "weight": 100.0,
+        "shelfLifeMonths": 36
+      },
+      {
+        "name": "Amla Powder",
+        "weight": 100.0,
+        "shelfLifeMonths": 24
+      },
+      {
+        "name": "Wheat Grass Powder",
+        "weight": 100.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Kashmiri Red Chilli Powder",
+        "weight": 100.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Aloe Rose Gel",
+        "weight": 30.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "Kumkumadi Eye Cream",
+        "weight": 15.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "Beetroot Lip Balm",
+        "weight": 8.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "Rose Lip Balm",
+        "weight": 8.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "Red Wine Gel",
+        "weight": 30.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "Saffron Cream",
+        "weight": 30.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "Healthy Glow Oil",
+        "weight": 100.0,
+        "shelfLifeMonths": 11
+      },
+      {
+        "name": "Goat Milk Soap",
+        "weight": 75.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Charcoal N Rose Soap",
+        "weight": 75.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Avarampoo Soap",
+        "weight": 75.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Sprout Activated Cow Pea",
+        "weight": 500.0,
+        "shelfLifeMonths": 3
+      },
+      {
+        "name": "Sprouted Gram Flour",
+        "weight": 500.0,
+        "shelfLifeMonths": 3
+      },
+      {
+        "name": "Emmer wheat rava",
+        "weight": 500.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "Panchmel Dal",
+        "weight": 500.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Sprout Activated Channa Dal",
+        "weight": 500.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Sprout Activated Moong Dal",
+        "weight": 500.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Sprouted Black Urad Dal Whole",
+        "weight": 500.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Revive Oil 100ml - Pump Type",
+        "weight": 100.0,
+        "shelfLifeMonths": 24
+      },
+      {
+        "name": "Twin Pack: (Release & Support) Oil -",
+        "weight": 50.0,
+        "shelfLifeMonths": 24
+      },
+      {
+        "name": "Triple Pack: (Release, Support & Revive) Oil -",
+        "weight": 10.0,
+        "shelfLifeMonths": 24
+      },
+      {
+        "name": "Relief Balm",
+        "weight": 30.0,
+        "shelfLifeMonths": 24
+      },
+      {
+        "name": "Support Oil",
+        "weight": 50.0,
+        "shelfLifeMonths": 24
+      },
+      {
+        "name": "Release Oil",
+        "weight": 50.0,
+        "shelfLifeMonths": 24
+      },
+      {
+        "name": "Mango Seed Powder",
+        "weight": 100.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Fenugreek Seed Powder",
+        "weight": 100.0,
+        "shelfLifeMonths": 24
+      },
+      {
+        "name": "Kashmiri Rose Petal Honey Gulkand",
+        "weight": 300.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Palm Jaggery Powder",
+        "weight": 250.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Wild Palm Jaggery",
+        "weight": 250.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Barley Hulled SA",
+        "weight": null,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Barley Flour SP",
+        "weight": 500.0,
+        "shelfLifeMonths": 2
+      },
+      {
+        "name": "Instant Milk Mix",
+        "weight": 100.0,
+        "shelfLifeMonths": 2
+      },
+      {
+        "name": "Dry fruit Powder",
+        "weight": null,
+        "shelfLifeMonths": 2
+      },
+      {
+        "name": "Green Cardamom",
+        "weight": 100.0,
+        "shelfLifeMonths": 18
+      },
+      {
+        "name": "Black Pepper",
+        "weight": 100.0,
+        "shelfLifeMonths": 18
+      },
+      {
+        "name": "Almond Date Powder",
+        "weight": 100.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Small Bee Honey",
+        "weight": 350.0,
+        "shelfLifeMonths": 18
+      },
+      {
+        "name": "Multifloral Honey",
+        "weight": 350.0,
+        "shelfLifeMonths": 18
+      },
+      {
+        "name": "Skin Glow Herbal",
+        "weight": 125.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Women's Care Tea",
+        "weight": 75.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Cleanse & Detox",
+        "weight": 150.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Diabetic Herbal",
+        "weight": 150.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Butterfly Pea Flower",
+        "weight": 30.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Yellow Dates Powder",
+        "weight": 250.0,
+        "shelfLifeMonths": 24
+      },
+      {
+        "name": "Amla Powder",
+        "weight": 250.0,
+        "shelfLifeMonths": 24
+      },
+      {
+        "name": "Kuppeimeni Bath Powder",
+        "weight": 250.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "Spirulina Powder",
+        "weight": 100.0,
+        "shelfLifeMonths": 36
+      },
+      {
+        "name": "Mamra Almond Porridge Mix",
+        "weight": 200.0,
+        "shelfLifeMonths": 2
+      },
+      {
+        "name": "Protein Booster",
+        "weight": 100.0,
+        "shelfLifeMonths": 2
+      },
+      {
+        "name": "Poongar Thick Flakes",
+        "weight": null,
+        "shelfLifeMonths": 4
+      },
+      {
+        "name": "SA Jowar Flour",
+        "weight": 500.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "SA Sattu Flour",
+        "weight": 500.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "Millet Pongal Mix",
+        "weight": 250.0,
+        "shelfLifeMonths": 5
+      },
+      {
+        "name": "SA Sesame Seeds White",
+        "weight": 150.0,
+        "shelfLifeMonths": 5
+      },
+      {
+        "name": "SA Little Millet",
+        "weight": 500.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "SA Kodo Millet",
+        "weight": 500.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "SA Barnyard Millet",
+        "weight": 500.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "SA Foxtail Millet",
+        "weight": 500.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "SA Sabja Seeds",
+        "weight": 100.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "Curry Leaves Powder",
+        "weight": 100.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "Pure Aloe vera Gel",
+        "weight": 200.0,
+        "shelfLifeMonths": 24
+      },
+      {
+        "name": "Rose Hydrosol",
+        "weight": 100.0,
+        "shelfLifeMonths": 24
+      },
+      {
+        "name": "Sunscreen SPF 50",
+        "weight": 50.0,
+        "shelfLifeMonths": 24
+      },
+      {
+        "name": "Kasthuri Turmeric Powder",
+        "weight": 25.0,
+        "shelfLifeMonths": 12
+      },
+      {
+        "name": "Makhana",
+        "weight": null,
+        "shelfLifeMonths": 14
+      },
+      {
+        "name": "Dried Round Chillies",
+        "weight": null,
+        "shelfLifeMonths": 3
+      },
+      {
+        "name": "Tippasattu + Amla Powder",
+        "weight": 100.0,
+        "shelfLifeMonths": 10
+      },
+      {
+        "name": "Cow milk + Ashwaganda",
+        "weight": 50.0,
+        "shelfLifeMonths": 6
+      },
+      {
+        "name": "Minapa Sunnundalu",
+        "weight": 500.0,
+        "shelfLifeMonths": 1
+      },
+      {
+        "name": "Nuvvula Laddu(calcium laddu)",
+        "weight": 500.0,
+        "shelfLifeMonths": 1
+      },
+      {
+        "name": "Dry Fruit Laddu ( Hb Laddu )",
+        "weight": 500.0,
+        "shelfLifeMonths": 1
+      },
+      {
+        "name": "Black Wheat Flour",
+        "weight": 500.0,
+        "shelfLifeMonths": 4
+      },
+      {
+        "name": "Badam barfi",
+        "weight": 500.0,
+        "shelfLifeMonths": 1
+      },
+      {
+        "name": "Omega 3 laddu",
+        "weight": 500.0,
+        "shelfLifeMonths": 1
+      },
+      {
+        "name": "Assorted chikkis",
+        "weight": 275.0,
+        "shelfLifeMonths": 1
+      },
+      {
+        "name": "Arjunchal Powder",
+        "weight": 100.0,
+        "shelfLifeMonths": 10
+      },
+      {
+        "name": "Diacare Ravva",
+        "weight": 500.0,
+        "shelfLifeMonths": 4
+      }
+    ];
+
+    // Convert shelf life to days and validate (skip for cookies)
+    products.forEach(product => {
+      if (!product.name.endsWith("Cookies")) {
+        const days = Math.round(product.shelfLifeMonths * 30.42);
+        product.shelfLifeDays = days > 0 ? days : 1; // Ensure shelf life is positive
+      } else {
+        product.shelfLifeDays = 0; // Cookies don't have a shelf life calculation
+      }
+    });
+
+    // Populate product dropdown with Choices.js for search
+    const productSelect = document.getElementById('productName');
+    const uniqueProducts = [...new Set(products.map(p => p.name))];
+    uniqueProducts.forEach(product => {
+      const option = document.createElement('option');
+      option.value = product;
+      option.textContent = product;
+      productSelect.appendChild(option);
+    });
+
+    // Initialize Choices.js for searchable dropdown
+    const choices = new Choices(productSelect, {
+      searchEnabled: true,
+      searchChoices: true,
+      itemSelectText: '',
+      placeholderValue: 'Select a product',
+      searchPlaceholderValue: 'Search for a product',
+    });
+
+    // Populate weight dropdown based on selected product
+    productSelect.addEventListener('change', () => {
+      const selectedProduct = productSelect.value;
+      const weightSelect = document.getElementById('weight');
+      weightSelect.innerHTML = '<option value="">Select weight</option>';
+      if (selectedProduct) {
+        const weights = products.filter(p => p.name === selectedProduct).map(p => p.weight);
+        weights.forEach(weight => {
+          const option = document.createElement('option');
+          option.value = weight;
+          option.textContent = `${weight}g`;
+          weightSelect.appendChild(option);
+        });
+      }
+    });
+
+    // Calculate expiry date
+    document.getElementById('calculateBtn').addEventListener('click', () => {
+      const productName = productSelect.value;
+      const weight = document.getElementById('weight').value;
+      const mfd = document.getElementById('mfd').value;
+      const errorDiv = document.getElementById('error');
+      const modal = document.getElementById('modal');
+      const expiryResult = document.getElementById('expiryResult');
+
+      // Reset error
+      errorDiv.classList.add('hidden');
+
+      if (!productName || !weight || !mfd) {
+        errorDiv.textContent = 'Please fill in all fields.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+
+      // Check if the product is a cookie (ends with "Cookies")
+      const isCookie = productName.endsWith("Cookies");
+      if (isCookie) {
+        expiryResult.textContent = "Please check the expiry on the cookies, it is not provided here.";
+        modal.classList.remove('hidden');
+        return;
+      }
+
+      // Find shelf life
+      const product = products.find(p => p.name === productName && p.weight === parseInt(weight));
+      if (!product) {
+        errorDiv.textContent = 'Invalid product or weight selected.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+
+      // Calculate expiry date
+      const mfdDate = new Date(mfd);
+      if (isNaN(mfdDate)) {
+        errorDiv.textContent = 'Invalid manufacturing date.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+
+      // Add shelf life in days using milliseconds for precision
+      const expiration = new Date(mfdDate);
+      const millisecondsPerDay = 1000 * 60 * 60 * 24;
+      const shelfLife = product.shelfLifeDays;
+      expiration.setTime(mfdDate.getTime() + shelfLife * millisecondsPerDay);
+
+      // Validate that expiry date is after MFD
+      if (expiration <= mfdDate) {
+        errorDiv.textContent = 'Error: Expiry date calculation failed. The result is not after the manufacturing date.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+
+      // Format the expiry date (hardcoded to DD-MM-YYYY)
+      const formattedDate = `${String(expiration.getDate()).padStart(2, '0')}-${String(expiration.getMonth() + 1).padStart(2, '0')}-${expiration.getFullYear()}`;
+
+      // Display result in modal
+      expiryResult.textContent = `The expiry date for ${productName} (${weight}g) with a shelf life of ${product.shelfLifeDays} days is ${formattedDate}.`;
+      modal.classList.remove('hidden');
+    });
+
+    // Close modal
+    document.getElementById('closeModalBtn').addEventListener('click', () => {
+      const modal = document.getElementById('modal');
+      modal.classList.add('hidden');
+      // Reset form
+      document.getElementById('form-container').reset();
+      document.getElementById('weight').innerHTML = '<option value="">Select weight</option>';
+      document.getElementById('error').classList.add('hidden');
+    });
+  </script>
+</body>
+
+</html>

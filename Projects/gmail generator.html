@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Email Generator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #e0f7fa, #fff3e0);
+      color: #333;
+      padding: 40px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #ffffff;
+      padding: 25px 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #00796b;
+    }
+    .email-count {
+      text-align: right;
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 10px;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      background-color: #00796b;
+      color: white;
+      font-weight: bold;
+      border: none;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #004d40;
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 16px;
+      background: #e8f5e9;
+      padding: 12px;
+      border-left: 5px solid #00796b;
+      border-radius: 8px;
+    }
+    .copy-btn {
+      margin-top: 10px;
+      background-color: #0288d1;
+    }
+    .copy-btn:hover {
+      background-color: #01579b;
+    }
+    .toggle-history-btn, .clear-btn, .download-btn {
+      margin-top: 10px;
+    }
+    .clear-btn {
+      background-color: #d32f2f;
+    }
+    .clear-btn:hover {
+      background-color: #b71c1c;
+    }
+    .download-btn {
+      background-color: #007bff;
+    }
+    .download-btn:hover {
+      background-color: #0056b3;
+    }
+    .history {
+      display: none;
+      background: #f1f8e9;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .history ul {
+      list-style: none;
+    }
+    .history li {
+      padding: 5px 0;
+    }
+    #searchInput {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Email ID Generator</h2>
+  <div class="email-count" id="emailCount">Count: 0</div>
+  <input type="text" id="name" placeholder="Enter name">
+  <input type="tel" id="mobile" placeholder="Enter mobile number">
+  <select id="domainSelect">
+    <option value="noemail@gmail.com" selected>noemail@gmail.com (default)</option>
+    <option value="nogmail@gmail.com">nogmail@gmail.com</option>
+  </select>
+  <button onclick="generateEmail()">Generate Email</button>
+  <div class="result" id="emailOutput"></div>
+  <button class="copy-btn" id="copyBtn" onclick="copyEmail()">Copy to Clipboard</button>
+
+  <button class="toggle-history-btn" onclick="toggleHistory()">Show History</button>
+  <input type="text" id="searchInput" placeholder="Search emails..." onkeyup="filterHistory()">
+  <div class="history" id="emailHistory"></div>
+  <button class="clear-btn" onclick="clearHistory()">Clear History</button>
+  <button class="download-btn" onclick="downloadEmails()">Download Emails</button>
+</div>
+
+<audio id="dingSound" src="https://www.myinstants.com/media/sounds/notification-sound-7062.mp3"></audio>
+
+<script>
+function generateEmail() {
+  const nameInput = document.getElementById('name').value.trim().toLowerCase().replace(/\s+/g, '');
+  const mobile = document.getElementById('mobile').value.trim();
+  const domain = document.getElementById('domainSelect').value;
+
+  if (!nameInput || mobile.length < 5) {
+    document.getElementById('emailOutput').innerText = 'Please enter a name and a valid mobile number (5+ digits).';
+    return;
+  }
+
+  const last5Digits = mobile.slice(-5);
+  const email = `${nameInput}${last5Digits}${domain}`;
+
+  let historyKey = domain.includes("nogmail") ? 'nogmailEmails' : 'noemailEmails';
+  let emailHistory = JSON.parse(localStorage.getItem(historyKey)) || [];
+
+  if (emailHistory.includes(email)) {
+    document.getElementById('emailOutput').innerText = `Duplicate Email: ${email}`;
+    return;
+  }
+
+  emailHistory.push(email);
+  localStorage.setItem(historyKey, JSON.stringify(emailHistory));
+  document.getElementById('emailOutput').innerText = `Generated Email: ${email}`;
+  document.getElementById('copyBtn').style.display = 'block';
+  document.getElementById('dingSound').play();
+
+  updateCount();
+  updateHistory(false);
+}
+
+function copyEmail() {
+  const emailText = document.getElementById('emailOutput').innerText.replace(/(Generated Email|Duplicate Email): /, '');
+  navigator.clipboard.writeText(emailText).then(() => {
+    alert("Email copied to clipboard!");
+  });
+}
+
+function updateCount() {
+  const noemailCount = JSON.parse(localStorage.getItem('noemailEmails'))?.length || 0;
+  const nogmailCount = JSON.parse(localStorage.getItem('nogmailEmails'))?.length || 0;
+  const total = noemailCount + nogmailCount;
+  document.getElementById('emailCount').innerText = `Count: ${total}`;
+}
+
+function updateHistory(show = true) {
+  const historyDiv = document.getElementById('emailHistory');
+  const noemailEmails = JSON.parse(localStorage.getItem('noemailEmails')) || [];
+  const nogmailEmails = JSON.parse(localStorage.getItem('nogmailEmails')) || [];
+  const allEmails = [...noemailEmails, ...nogmailEmails];
+
+  if (!show) {
+    historyDiv.style.display = 'none';
+    return;
+  }
+
+  historyDiv.innerHTML = '<ul id="emailList">' + allEmails.map((email, i) => `<li>${i + 1}. ${email}</li>`).join('') + '</ul>';
+  historyDiv.style.display = 'block';
+}
+
+function filterHistory() {
+  const filter = document.getElementById('searchInput').value.toLowerCase();
+  const items = document.querySelectorAll('#emailList li');
+  items.forEach(li => {
+    li.style.display = li.textContent.toLowerCase().includes(filter) ? '' : 'none';
+  });
+}
+
+function toggleHistory() {
+  const historyDiv = document.getElementById('emailHistory');
+  const isVisible = historyDiv.style.display === 'block';
+  updateHistory(!isVisible);
+}
+
+function clearHistory() {
+  const emailsBackup = {
+    noemailEmails: JSON.parse(localStorage.getItem('noemailEmails')) || [],
+    nogmailEmails: JSON.parse(localStorage.getItem('nogmailEmails')) || []
+  };
+
+  downloadTextFile(emailsBackup.noemailEmails.join('\n'), 'backup_noemail_emails.txt');
+  downloadTextFile(emailsBackup.nogmailEmails.join('\n'), 'backup_nogmail_emails.txt');
+
+  if (confirm("Are you sure you want to clear the email history?")) {
+    localStorage.removeItem('noemailEmails');
+    localStorage.removeItem('nogmailEmails');
+    updateCount();
+    updateHistory(false);
+    alert("History cleared. Backup saved.");
+  }
+}
+
+function downloadEmails() {
+  const noemailList = JSON.parse(localStorage.getItem('noemailEmails')) || [];
+  const nogmailList = JSON.parse(localStorage.getItem('nogmailEmails')) || [];
+
+  downloadTextFile(noemailList.join('\n'), 'noemail_emails.txt');
+  downloadTextFile(nogmailList.join('\n'), 'nogmail_emails.txt');
+}
+
+function downloadTextFile(text, filename) {
+  const blob = new Blob([text], { type: 'text/plain' });
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = window.URL.createObjectURL(blob);
+  link.click();
+}
+
+window.onload = updateCount;
+</script>
+</body>
+</html>

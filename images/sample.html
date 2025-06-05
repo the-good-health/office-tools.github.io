@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    };
+  </script>
+</head>
+
+<body class="transition duration-300">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const users = [
+      { username: "admin", email: "admin@thegoodhealth.co.in", password: "admin123" },
+      { username: "user1", email: "user1@thegoodhealth.co.in", password: "user123" },
+      { username: "user2", email: "user2@thegoodhealth.co.in", password: "user456" },
+    ];
+
+    const projects = [
+      { name: "Product Finder", icon: "🔍", bgColor: "bg-orange-500", link: "../Applications/Projects/Products Verification.HTML" },
+      { name: "Source Number Finder", icon: "📅", bgColor: "bg-blue-500", link: "../Applications/Projects/Source Number Finder.html" },
+      { name: "Barcode Tools", icon: "🕒", bgColor: "bg-teal-500", link: "../Applications/Projects/Barcode Essentials.html" },
+      { name: "PDF Merger", icon: "📝", bgColor: "bg-purple-500", link: "../Applications/Projects/TGH_PDF Merger.html" },
+      { name: "Email Generator", icon: "📧", bgColor: "bg-green-500", link: "../Applications/Projects/gmail generator.html" },
+      { name: "Products", icon: "📇", bgColor: "bg-pink-500", link: "../Applications/Projects/Products.html" },
+      { name: "Files Conveter", icon: "👥", bgColor: "bg-indigo-500", link: "../Applications/Projects/fileconversion.html" },
+      /*{ name: "CRM", icon: "🤝", bgColor: "bg-yellow-500", link: "/crm" },
+      { name: "Dashboards", icon: "📊", bgColor: "bg-red-500", link: "/dashboards" },
+      { name: "Documents", icon: "📄", bgColor: "bg-cyan-500", link: "/documents" },
+      { name: "Timesheets", icon: "⏰", bgColor: "bg-orange-400", link: "/timesheets" },
+      { name: "Planning", icon: "📋", bgColor: "bg-blue-400", link: "/planning" },
+      { name: "Helpdesk", icon: "🆘", bgColor: "bg-green-400", link: "/helpdesk" },
+      { name: "Website", icon: "🌐", bgColor: "bg-purple-400", link: "https://www.thegoodhealth.co.in/" },
+      { name: "Social Marketing", icon: "❤️", bgColor: "bg-pink-400", link: "/social-marketing" },
+      { name: "Marketing Autom...", icon: "📈", bgColor: "bg-teal-400", link: "/marketing-automation" },
+      { name: "Email Marketing", icon: "📚", bgColor: "bg-indigo-400", link: "/email-marketing" },
+      { name: "SMS Marketing", icon: "📩", bgColor: "bg-red-400", link: "/sms-marketing" },
+      { name: "Quality", icon: "✅", bgColor: "bg-blue-600", link: "/quality" },
+      { name: "Barcode", icon: "📷", bgColor: "bg-gray-500", link: "/barcode" },
+      { name: "Maintenance", icon: "🛠️", bgColor: "bg-yellow-400", link: "/maintenance" },
+      { name: "Employees", icon: "👥", bgColor: "bg-green-600", link: "/employees" },
+      { name: "Attendance", icon: "📅", bgColor: "bg-purple-600", link: "/attendance" },
+      { name: "Time Off", icon: "🏖️", bgColor: "bg-orange-600", link: "/time-off" },*/
+    ];
+
+    const ProjectCard = ({ project }) => (
+      <a href={project.link}
+        className="bg-black bg-opacity-50 rounded-lg p-4 flex flex-col items-center justify-center h-28 w-28 transition transform hover:scale-105 duration-300">
+        <div className={`text-2xl ${project.bgColor} rounded-full p-4 text-white`}>
+          {project.icon}
+        </div>
+        <p className="text-xs mt-1 text-center text-white leading-tight">{project.name}</p>
+      </a>
+    );
+
+    const Login = ({ onLogin }) => {
+      const [email, setEmail] = React.useState("");
+      const [password, setPassword] = React.useState("");
+      const [error, setError] = React.useState("");
+
+      const handleLogin = (e) => {
+        e.preventDefault();
+        const user = users.find(
+          (u) => (u.email === email || u.username === email) && u.password === password
+        );
+        if (user) {
+          localStorage.setItem("user", JSON.stringify(user));
+          onLogin(user);
+        } else {
+          setError("Invalid email/username or password");
+        }
+      };
+
+      return (
+        <>
+          <div className="fixed top-0 left-0 right-0 bg-white text-black h-16 flex items-center px-6 shadow z-50">
+            <img
+              src="https://www.thegoodhealth.co.in/web/image/website/1/logo/www.thegoodhealth.co.in?unique=7145bcf"
+              alt="Logo"
+              className="h-10"
+            />
+          </div>
+          <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-teal-900 to-gray-900 pt-16">
+            <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-96">
+              <h2 className="text-2xl text-white mb-6 text-center">Login</h2>
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Email or Username"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full p-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full p-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                {error && <p className="text-red-500 text-sm">{error}</p>}
+                <button
+                  onClick={handleLogin}
+                  className="w-full p-2 bg-teal-500 text-white rounded hover:bg-teal-600 transition"
+                >
+                  Login
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      );
+    };
+
+    const Dashboard = ({ user, onLogout, theme, toggleTheme }) => (
+      <>
+        <div className={`fixed top-0 left-0 right-0 ${theme === 'light' ? 'bg-white text-black' : 'bg-gray-900 text-white'} h-16 flex items-center justify-between px-6 shadow z-50`}>
+          <img
+            src="https://www.thegoodhealth.co.in/web/image/website/1/logo/www.thegoodhealth.co.in?unique=7145bcf"
+            alt="Logo"
+            className="h-10"
+          />
+          <div className="flex items-center space-x-4">
+            <span>{user.email}</span>
+            <button onClick={toggleTheme} className="text-2xl transition-transform transform hover:rotate-180 duration-300">
+              {theme === "light" ? "🌙" : "☀️"}
+            </button>
+            <button
+              onClick={onLogout}
+              className="p-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+
+        <div className="pt-20 pb-4 transition-all duration-500 min-h-screen bg-gradient-to-br from-gray-900 via-teal-900 to-gray-900">
+          <div className="max-w-4xl mx-auto px-4">
+            <div className="grid grid-cols-5 gap-4">
+              {projects.map((project, index) => (
+                <ProjectCard key={index} project={project} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </>
+    );
+
+    const App = () => {
+      const [user, setUser] = React.useState(null);
+      const [theme, setTheme] = React.useState(() => localStorage.getItem('theme') || "light");
+
+      const handleLogin = (user) => {
+        setUser(user);
+      };
+
+      const handleLogout = () => {
+        localStorage.removeItem("user");
+        setUser(null);
+      };
+
+      const toggleTheme = () => {
+        const newTheme = theme === "dark" ? "light" : "dark";
+        setTheme(newTheme);
+        localStorage.setItem('theme', newTheme);
+        document.documentElement.classList.toggle("dark", newTheme === "dark");
+        document.body.className = newTheme === "dark"
+          ? "bg-gradient-to-br from-gray-900 via-teal-900 to-gray-900"
+          : "bg-white text-black";
+      };
+
+      React.useEffect(() => {
+        document.documentElement.classList.toggle("dark", theme === "dark");
+        document.body.className = theme === "dark"
+          ? "bg-gradient-to-br from-gray-900 via-teal-900 to-gray-900"
+          : "bg-white text-black";
+
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) setUser(JSON.parse(storedUser));
+      }, []);
+
+      return (
+        <>
+          {user ? (
+            <Dashboard user={user} onLogout={handleLogout} theme={theme} toggleTheme={toggleTheme} />
+          ) : (
+            <Login onLogin={handleLogin} />
+          )}
+        </>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+
+</html>

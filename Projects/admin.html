@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Management - Admin</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class', // can be 'media' or 'class'
+    };
+    // Apply dark mode if saved in localStorage or based on system preference
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+  <style>
+    html, body, #root {
+      height: 100%;
+      margin: 0;
+    }
+    body {
+        background-color: #f3f4f6; /* Tailwind gray-100 for light mode */
+    }
+    body.dark {
+        background-color: #1f2937; /* Tailwind gray-800 for dark mode */
+    }
+
+    /* Custom scrollbar for better aesthetics in dark mode */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: #4b5563; /* Tailwind gray-600 */
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: #6b7280; /* Tailwind gray-500 */
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background-color: #6b7280; /* Tailwind gray-500 for dark scrollbar thumb */
+    }
+    .dark ::-webkit-scrollbar-thumb:hover {
+      background-color: #9ca3af; /* Tailwind gray-400 for dark scrollbar thumb hover */
+    }
+  </style>
+</head>
+
+<body class="transition duration-300 dark:bg-gray-900">
+  <div id="root"></div>
+  <div id="confirmation-dialog-root"></div>
+
+  <script type="text/babel">
+    // This should ideally be shared or fetched, but for simplicity, we'll redefine it here.
+    // It's crucial that the IDs match those in the main application's defaultApplications.
+    // Excludes 'userManagement' as admin shouldn't assign it to others; admin gets it implicitly.
+    const allAvailableApplications = [
+        { id: "productFinder", name: "Product Finder" },
+        { id: "sourceNumberFinder", name: "Source Number Finder" },
+        { id: "barcodeTools", name: "Barcode Tools" },
+        { id: "pdfMerger", name: "PDF Merger" },
+        { id: "emailGenerator", name: "Email Generator" },
+        { id: "products", name: "Products" },
+        { id: "expValidation", name: "EXP Validation" },
+        // { id: "userManagement", name: "User Management" }, // Admin app, not for general assignment
+        { id: "contacts", name: "Contacts" },
+        { id: "frontdesk", name: "Frontdesk" },
+        { id: "crm", name: "CRM" },
+        { id: "dashboards", name: "Dashboards" },
+        { id: "documents", name: "Documents" },
+        { id: "timesheets", name: "Timesheets" },
+        { id: "planning", name: "Planning" },
+        { id: "helpdesk", name: "Helpdesk" },
+        { id: "website", name: "Website" },
+        { id: "socialMarketing", name: "Social Marketing" },
+        { id: "marketingAutomation", name: "Marketing Autom..." },
+        { id: "emailMarketing", name: "Email Marketing" },
+        { id: "smsMarketing", name: "SMS Marketing" },
+        { id: "quality", name: "Quality" },
+        { id: "barcodeScanner", name: "Barcode Scanner" },
+        { id: "maintenance", name: "Maintenance" },
+        { id: "employees", name: "Employees" },
+        { id: "attendance", name: "Attendance" },
+        { id: "timeOff", name: "Time Off" },
+        { id: "expenses", name: "Expenses" },
+        { id: "liveChat", name: "Live Chat" },
+        { id: "inventory", name: "Inventory" },
+        { id: "sales", name: "Sales" },
+        { id: "pointOfSale", name: "Point of Sale" },
+        { id: "cleaning", name: "Cleaning" },
+        { id: "whatsapp", name: "WhatsApp" },
+        { id: "apps", name: "Apps" },
+    ];
+
+
+    const UserManagementApp = () => {
+      const [users, setUsers] = React.useState([]);
+      const [newUsername, setNewUsername] = React.useState('');
+      const [newEmail, setNewEmail] = React.useState('');
+      const [newPassword, setNewPassword] = React.useState('');
+      const [newAllowedTools, setNewAllowedTools] = React.useState([]);
+
+      const [editingUser, setEditingUser] = React.useState(null); 
+      const [editUsername, setEditUsername] = React.useState('');
+      const [editEmail, setEditEmail] = React.useState('');
+      const [editPassword, setEditPassword] = React.useState('');
+      const [editAllowedTools, setEditAllowedTools] = React.useState([]);
+
+
+      const [error, setError] = React.useState('');
+      const [success, setSuccess] = React.useState('');
+      const [theme, setTheme] = React.useState(localStorage.getItem('theme') || 'dark');
+
+      React.useEffect(() => {
+        const storedUsersRaw = localStorage.getItem('users');
+        let loadedUsers = [];
+        let usersListModifiedInLoad = false;
+
+        if (storedUsersRaw) {
+            try {
+                const parsedUsers = JSON.parse(storedUsersRaw);
+                loadedUsers = parsedUsers.map(u => {
+                    let currentTools = u.allowedTools || [];
+                    let userDefinitionChanged = !u.hasOwnProperty('allowedTools');
+
+                    if (u.username === 'admin') {
+                        const adminExpectedTools = allAvailableApplications.map(app => app.id)
+                          .concat(["userManagement"]); // Admin needs userManagement tool too
+
+                        const toolsMatch = currentTools.length === adminExpectedTools.length &&
+                                           adminExpectedTools.every(toolId => currentTools.includes(toolId)) &&
+                                           currentTools.every(toolId => adminExpectedTools.includes(toolId));
+                        if (!toolsMatch) {
+                            console.log(`Admin Panel: Correcting admin (${u.username}) tools to include all ${adminExpectedTools.length} tools.`);
+                            currentTools = adminExpectedTools;
+                            userDefinitionChanged = true;
+                        }
+                    }
+                    if (userDefinitionChanged) usersListModifiedInLoad = true;
+                    return { ...u, allowedTools: currentTools };
+                });
+            } catch (e) {
+                console.error("Failed to parse stored users in admin.html. Resetting to empty list.", e);
+                localStorage.setItem('users', JSON.stringify([])); 
+                loadedUsers = [];
+            }
+        } else {
+            console.warn("admin.html: 'users' key not found in localStorage. Main app should initialize it.");
+        }
+
+        setUsers(loadedUsers);
+
+        if (usersListModifiedInLoad && loadedUsers.length > 0) {
+            console.log("Admin Panel: User list was modified during load/validation, saving updated list to localStorage.");
+            localStorage.setItem('users', JSON.stringify(loadedUsers));
+        }
+      }, []);
+
+      React.useEffect(() => {
+        // Persist users to localStorage whenever the users state changes,
+        // but only if it's not the initial empty state before loading.
+        if (users.length > 0 || localStorage.getItem('users')) { // Avoid overwriting with empty on initial load if it was already empty
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+      }, [users]);
+
+      React.useEffect(() => {
+        document.documentElement.classList.toggle("dark", theme === "dark");
+        document.body.classList.toggle("dark", theme === "dark");
+      }, [theme]);
+
+      const toggleTheme = () => {
+        const newTheme = theme === "dark" ? "light" : "dark";
+        setTheme(newTheme);
+        localStorage.setItem('theme', newTheme);
+      };
+
+      const showMessage = (message, type) => {
+        if (type === 'error') setError(message);
+        else setSuccess(message);
+        setTimeout(() => { setError(''); setSuccess(''); }, 3000);
+      };
+
+      const handleToolSelection = (toolId, userType) => {
+        if (userType === 'new') {
+            setNewAllowedTools(prev =>
+                prev.includes(toolId) ? prev.filter(id => id !== toolId) : [...prev, toolId]
+            );
+        } else if (userType === 'edit' && editingUser) {
+             if (editingUser.username === 'admin') {
+                showMessage('Admin user permissions are fixed and include all tools.', 'info');
+                return; 
+             }
+             setEditAllowedTools(prev =>
+                prev.includes(toolId) ? prev.filter(id => id !== toolId) : [...prev, toolId]
+            );
+        }
+      };
+
+      const handleAddUser = (e) => {
+        e.preventDefault();
+        if (!newUsername || !newEmail || !newPassword) {
+          showMessage('Username, Email, and Password are required to add a user.', 'error');
+          return;
+        }
+        if (users.some(u => u.username === newUsername || u.email === newEmail)) {
+          showMessage('Username or Email already exists.', 'error');
+          return;
+        }
+        if (newUsername === 'admin' && users.some(u => u.username === 'admin')) {
+            showMessage('An admin user already exists. Cannot add another user named "admin".', 'error');
+            return;
+        }
+
+        const newUser = {
+          username: newUsername,
+          email: newEmail,
+          password: newPassword, 
+          allowedTools: newUsername === 'admin' 
+            ? allAvailableApplications.map(app => app.id).concat(["userManagement"]) // If creating admin, give all tools
+            : newAllowedTools,
+        };
+        setUsers([...users, newUser]);
+        setNewUsername(''); setNewEmail(''); setNewPassword(''); setNewAllowedTools([]);
+        showMessage('User added successfully!', 'success');
+      };
+
+      const handleEditClick = (userToEdit) => {
+        setEditingUser(userToEdit); 
+        setEditUsername(userToEdit.username); 
+        setEditEmail(userToEdit.email);
+        setEditPassword(''); // Clear password field, user must re-enter to change
+        setEditAllowedTools(
+            userToEdit.username === 'admin'
+            ? allAvailableApplications.map(app => app.id).concat(["userManagement"])
+            : (userToEdit.allowedTools || [])
+        );
+        setError(''); setSuccess('');
+      };
+
+      const handleSaveEdit = (e) => {
+        e.preventDefault();
+        if (!editingUser || !editUsername || !editEmail ) { // Password not mandatory for save
+          showMessage('Username and Email are required for editing.', 'error');
+          return;
+        }
+        // Check for unique username/email, excluding the current editing user (matched by original username)
+        if (users.some(u => (u.username === editUsername || u.email === editEmail) && u.username !== editingUser.username)) {
+          showMessage('Username or Email already exists for another user.', 'error');
+          return;
+        }
+
+        const finalAllowedTools = editingUser.username === 'admin' // If original user was admin
+            ? allAvailableApplications.map(app => app.id).concat(["userManagement"]) // Admin keeps all tools
+            : editAllowedTools;
+
+        const updatedUser = {
+            ...editingUser, 
+            username: editUsername, // Username can be changed (except for 'admin' effectively)
+            email: editEmail,
+            password: editPassword ? editPassword : editingUser.password, // Update password only if new one is provided
+            allowedTools: finalAllowedTools,
+        };
+
+        setUsers(users.map(user =>
+          user.username === editingUser.username ? updatedUser : user 
+        ));
+        setEditingUser(null); 
+        setEditUsername(''); setEditEmail(''); setEditPassword(''); setEditAllowedTools([]);
+        showMessage('User updated successfully!', 'success');
+      };
+
+      const handleCancelEdit = () => {
+        setEditingUser(null);
+        setEditUsername(''); setEditEmail(''); setEditPassword(''); setEditAllowedTools([]);
+        setError(''); setSuccess('');
+      };
+
+      const handleDeleteUser = (userToDelete) => {
+        if (userToDelete.username === 'admin') {
+          showMessage('Cannot delete the admin user.', 'error');
+          return;
+        }
+        const Dialog = () => (
+            <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl text-gray-900 dark:text-white max-w-sm w-full">
+                    <h3 className="text-lg font-semibold mb-4">Confirm Deletion</h3>
+                    <p className="mb-6 text-sm">Are you sure you want to delete user: <span className="font-semibold">{userToDelete.username}</span>?</p>
+                    <div className="flex justify-end space-x-3">
+                        <button
+                            onClick={() => {
+                                setUsers(users.filter(user => user.username !== userToDelete.username));
+                                showMessage('User deleted successfully!', 'success');
+                                ReactDOM.render(null, document.getElementById('confirmation-dialog-root'));
+                            }}
+                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition"
+                        >
+                            Delete
+                        </button>
+                        <button
+                            onClick={() => ReactDOM.render(null, document.getElementById('confirmation-dialog-root'))}
+                            className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-400 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 transition"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+        ReactDOM.render(<Dialog />, document.getElementById('confirmation-dialog-root'));
+      };
+      
+      const loggedInUserString = localStorage.getItem('currentUser'); 
+      let loggedInUser = null;
+      if(loggedInUserString) {
+        try {
+          loggedInUser = JSON.parse(loggedInUserString);
+        } catch(e){
+          console.error("Error parsing loggedInUser from localStorage", e);
+        }
+      }
+
+      if (!loggedInUser || loggedInUser.username !== 'admin') {
+        return (
+          <div className={`flex flex-col items-center justify-center min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'} p-4`}>
+            <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-8 rounded-lg shadow-xl text-center max-w-md w-full`}>
+              <h2 className="text-2xl font-bold mb-4">Access Denied</h2>
+              <p className="mb-6">You must be logged in as an admin to access this page.</p>
+              <button
+                onClick={() => { window.location.href = './TGH_Console_App.html'; }}
+                className="w-full p-3 bg-teal-500 text-white rounded-md hover:bg-teal-600 transition-colors duration-300 font-semibold"
+              >
+                Go to Login
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      const renderToolCheckboxes = (selectedTools, handler, userType) => {
+        const isEditingAdmin = userType === 'edit' && editingUser && editingUser.username === 'admin';
+        return (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-2 max-h-48 overflow-y-auto p-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-700">
+                {allAvailableApplications.map(app => (
+                    <label key={app.id} className={`flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 p-1 rounded ${isEditingAdmin ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600'}`}>
+                        <input
+                            type="checkbox"
+                            className="form-checkbox h-4 w-4 text-teal-500 border-gray-300 dark:border-gray-500 rounded focus:ring-teal-400 dark:focus:ring-teal-600 dark:bg-gray-800"
+                            checked={isEditingAdmin || selectedTools.includes(app.id)}
+                            onChange={() => handler(app.id, userType)}
+                            disabled={isEditingAdmin} 
+                        />
+                        <span>{app.name}</span>
+                    </label>
+                ))}
+            </div>
+        );
+      }
+      
+      return (
+        <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'} p-4 sm:p-6 md:p-8 transition-colors duration-300`}>
+          <div className={`max-w-7xl mx-auto ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} p-6 rounded-xl shadow-2xl`}>
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-bold text-gray-800 dark:text-white">User Management</h1>
+                <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors duration-300">
+                    <span className="text-2xl">{theme === "light" ? "🌙" : "☀️"}</span>
+                </button>
+            </div>
+
+            {error && <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded-md relative mb-6 text-sm" role="alert">{error}</div>}
+            {success && <div className="bg-green-100 dark:bg-green-900 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-200 px-4 py-3 rounded-md relative mb-6 text-sm" role="alert">{success}</div>}
+
+            <div className="bg-white dark:bg-gray-700 shadow-lg rounded-lg p-6 mb-8">
+                <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-white">{editingUser ? 'Edit User' : 'Add New User'}</h2>
+                <form onSubmit={editingUser ? handleSaveEdit : handleAddUser} className="space-y-6">
+                    <div>
+                        <label htmlFor={editingUser ? "editUsername" : "newUsername"} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username</label>
+                        <input
+                            type="text"
+                            id={editingUser ? "editUsername" : "newUsername"}
+                            value={editingUser ? editUsername : newUsername}
+                            onChange={(e) => editingUser ? setEditUsername(e.target.value) : setNewUsername(e.target.value)}
+                            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 dark:bg-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm"
+                            readOnly={editingUser && editingUser.username === 'admin'} 
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor={editingUser ? "editEmail" : "newEmail"} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                        <input
+                            type="email"
+                            id={editingUser ? "editEmail" : "newEmail"}
+                            value={editingUser ? editEmail : newEmail}
+                            onChange={(e) => editingUser ? setEditEmail(e.target.value) : setNewEmail(e.target.value)}
+                            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 dark:bg-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor={editingUser ? "editPassword" : "newPassword"} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
+                        <input
+                            type="password"
+                            id={editingUser ? "editPassword" : "newPassword"}
+                            value={editingUser ? editPassword : newPassword}
+                            onChange={(e) => editingUser ? setEditPassword(e.target.value) : setNewPassword(e.target.value)}
+                            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 dark:bg-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm"
+                            placeholder={editingUser ? "Leave blank to keep current password" : "Enter password"}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Allowed Tools</label>
+                        {renderToolCheckboxes(editingUser ? editAllowedTools : newAllowedTools, handleToolSelection, editingUser ? 'edit' : 'new')}
+                    </div>
+
+                    <div className="flex items-center space-x-4 pt-2">
+                        <button
+                            type="submit"
+                            className="px-6 py-2.5 bg-teal-600 text-white font-medium text-sm rounded-md shadow-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:focus:ring-offset-gray-800 transition-colors duration-150"
+                        >
+                            {editingUser ? 'Save Changes' : 'Add User'}
+                        </button>
+                        {editingUser && (
+                            <button
+                                type="button"
+                                onClick={handleCancelEdit}
+                                className="px-6 py-2.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium text-sm rounded-md shadow-md hover:bg-gray-300 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 dark:focus:ring-offset-gray-800 transition-colors duration-150"
+                            >
+                                Cancel
+                            </button>
+                        )}
+                    </div>
+                </form>
+            </div>
+
+            <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-white">Existing Users</h2>
+            {users.length === 0 ? (
+              <p className="text-center text-gray-500 dark:text-gray-400 py-4">No users found. Admin user should be created by the main application on first load.</p>
+            ) : (
+              <div className="overflow-x-auto shadow-lg rounded-lg">
+                <table className="min-w-full bg-white dark:bg-gray-700 rounded-lg">
+                  <thead className="bg-gray-50 dark:bg-gray-600">
+                    <tr>
+                      <th scope="col" className="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 dark:text-white rounded-tl-lg">Username</th>
+                      <th scope="col" className="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 dark:text-white">Email</th>
+                      <th scope="col" className="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 dark:text-white">Password (Hidden)</th>
+                      <th scope="col" className="py-3.5 px-4 text-left text-sm font-semibold text-gray-900 dark:text-white">Allowed Tools Count</th>
+                      <th scope="col" className="py-3.5 px-4 text-center text-sm font-semibold text-gray-900 dark:text-white rounded-tr-lg">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
+                    {users.map((user) => (
+                      <tr key={user.username} className="hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-150">
+                        <td className="whitespace-nowrap py-4 px-4 text-sm font-medium text-gray-900 dark:text-white">{user.username}</td>
+                        <td className="whitespace-nowrap py-4 px-4 text-sm text-gray-500 dark:text-gray-300">{user.email}</td>
+                        <td className="whitespace-nowrap py-4 px-4 text-sm text-gray-500 dark:text-gray-300">********</td>
+                        <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-300">
+                            {user.username === 'admin' 
+                                ? <span className="font-semibold text-teal-600 dark:text-teal-400">All Tools (Admin)</span> 
+                                : (user.allowedTools ? user.allowedTools.length : 0)
+                            }
+                        </td>
+                        <td className="whitespace-nowrap py-4 px-4 text-center text-sm font-medium space-x-2">
+                          <button
+                            onClick={() => handleEditClick(user)}
+                            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-150 px-2 py-1 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900"
+                            title="Edit User"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user)}
+                            className={`text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors duration-150 px-2 py-1 rounded-md hover:bg-red-100 dark:hover:bg-red-900 ${user.username === 'admin' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            disabled={user.username === 'admin'}
+                            title={user.username === 'admin' ? 'Cannot delete admin' : 'Delete User'}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<UserManagementApp />);
+  </script>
+</body>
+</html>

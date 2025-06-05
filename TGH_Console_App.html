@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TGH Console</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Tailwind CSS configuration for dark mode
+    tailwind.config = {
+      darkMode: 'class',
+    };
+  </script>
+  <style>
+    /* Custom styles for drag-and-drop feedback */
+    .dragging {
+      opacity: 0.5;
+      border: 2px dashed #a78bfa; /* Tailwind violet-400 */
+    }
+
+    .drag-over {
+      border: 2px solid #38b2ac; /* Tailwind teal-500 */
+    }
+
+    /* Ensure body and html take full height for proper layout */
+    html,
+    body,
+    #root {
+      height: 100%;
+      margin: 0;
+    }
+
+    /* Style for the iframe to fill its container */
+    .iframe-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      /* Use theme-based background for iframe container if needed, or keep it dark */
+      /* background-color: #1a202c; */ /* Tailwind gray-900 - or conditional */
+      padding: 1rem; /* Tailwind p-4 */
+    }
+
+    .iframe-container iframe {
+      flex-grow: 1;
+      width: 100%;
+      border: none;
+      border-radius: 0.5rem; /* Tailwind rounded-lg */
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Tailwind shadow-md */
+    }
+  </style>
+</head>
+
+<body class="transition duration-300"> 
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // Define the default list of applications for the Dashboard
+    // Updated icons to be more relevant to the application names
+    const defaultApplications = [
+      { id: "productFinder", name: "Product Finder", icon: "🛍️", bgColor: "bg-orange-500", link: "../Applications/Projects/Products Verification.HTML" },
+      { id: "sourceNumberFinder", name: "Source Number Finder", icon: "🔢", bgColor: "bg-blue-500", link: "../Applications/Projects/Source Number Finder.html" },
+      { id: "barcodeTools", name: "Barcode Tools", icon: "║█║", bgColor: "bg-teal-500", link: "../Applications/Projects/Barcode Essentials.html" }, // Using a simple barcode like text emoji
+      { id: "pdfMerger", name: "PDF Merger", icon: "🔗", bgColor: "bg-purple-500", link: "../Applications/Projects/TGH_PDF Merger.html" },
+      { id: "emailGenerator", name: "Email Generator", icon: "✉️", bgColor: "bg-green-500", link: "../Applications/Projects/gmail generator.html" },
+      { id: "products", name: "Products", icon: "🛒", bgColor: "bg-pink-500", link: "../Applications/Projects/Products.html" },
+      { id: "expValidation", name: "EXP Validation", icon: "🛡️", bgColor: "bg-indigo-500", link: "../Applications/Projects/TGH_Product_EXP_Validation.html" },
+      { id: "userManagement", name: "User Management", icon: "⚙️", bgColor: "bg-gray-600", link: "../Applications/Projects/admin.html" }, // Changed icon to group of users
+      { id: "contacts", name: "Contacts", icon: "📇", bgColor: "bg-pink-500", link: "#/contacts" },
+      { id: "frontdesk", name: "Frontdesk", icon: "🛎️", bgColor: "bg-indigo-500", link: "#/frontdesk" },
+      { id: "crm", name: "CRM", icon: "📈", bgColor: "bg-yellow-500", link: "#/crm" }, // Changed icon to graph for CRM
+      { id: "dashboards", name: "Dashboards", icon: "📊", bgColor: "bg-red-500", link: "#/dashboards" },
+      { id: "documents", name: "Documents", icon: "📄", bgColor: "bg-cyan-500", link: "#/documents" },
+      { id: "timesheets", name: "Timesheets", icon: "⏱️", bgColor: "bg-orange-400", link: "#/timesheets" },
+      { id: "planning", name: "Planning", icon: "🗓️", bgColor: "bg-blue-400", link: "#/planning" },
+      { id: "helpdesk", name: "Helpdesk", icon: "🆘", bgColor: "bg-green-400", link: "#/helpdesk" },
+      { id: "website", name: "Website", icon: "🌐", bgColor: "bg-purple-400", link: "#/website" },
+      { id: "socialMarketing", name: "Social Marketing", icon: "📱", bgColor: "bg-pink-400", link: "#/social-marketing" }, // Changed to mobile phone icon
+      { id: "marketingAutomation", name: "Marketing Autom...", icon: "📈", bgColor: "bg-teal-400", link: "#/marketing-automation" }, // Combined gears and graph
+      { id: "emailMarketing", name: "Email Marketing", icon: "📧", bgColor: "bg-indigo-400", link: "#/email-marketing" }, // Email and megaphone
+      { id: "smsMarketing", name: "SMS Marketing", icon: "💬", bgColor: "bg-red-400", link: "#/sms-marketing" }, // SMS bubble and megaphone
+      { id: "quality", name: "Quality", icon: "⭐", bgColor: "bg-blue-600", link: "#/quality" }, // Star for quality
+      { id: "barcodeScanner", name: "Barcode Scanner", icon: "📷", bgColor: "bg-gray-500", link: "#/barcode-scanner" },
+      { id: "maintenance", name: "Maintenance", icon: "🛠️", bgColor: "bg-yellow-400", link: "#/maintenance" },
+      { id: "employees", name: "Employees", icon: "👥", bgColor: "bg-green-600", link: "#/employees" }, // Office worker
+      { id: "attendance", name: "Attendance", icon: "✔️", bgColor: "bg-purple-600", link: "#/attendance" }, // Checkmark
+      { id: "timeOff", name: "Time Off", icon: "✈️", bgColor: "bg-orange-600", link: "#/time-off" }, // Airplane for time off/vacation
+      { id: "expenses", name: "Expenses", icon: "💳", bgColor: "bg-teal-600", link: "#/expenses" }, // Credit card
+      { id: "liveChat", name: "Live Chat", icon: "💬", bgColor: "bg-pink-600", link: "#/live-chat" },
+      { id: "inventory", name: "Inventory", icon: "📦", bgColor: "bg-indigo-600", link: "#/inventory" },
+      { id: "sales", name: "Sales", icon: "💲", bgColor: "bg-red-600", link: "#/sales" }, // Dollar sign
+      { id: "pointOfSale", name: "Point of Sale", icon: "🏪", bgColor: "bg-blue-700", link: "#/point-of-sale" }, // Convenience store icon
+      { id: "cleaning", name: "Cleaning", icon: "🧹", bgColor: "bg-purple-700", link: "#/cleaning" },
+      { id: "whatsapp", name: "WhatsApp", icon: "🟢", bgColor: "bg-green-700", link: "#/whatsapp" }, // Green circle for WhatsApp
+      { id: "apps", name: "Apps", icon: "🧩", bgColor: "bg-teal-700", link: "#/apps" }, // Puzzle piece for general apps
+    ];
+
+    // ProjectCard component for displaying individual application links on the dashboard
+    const ProjectCard = ({ application, index, onDragStart, onDragOver, onDrop, onDragLeave, onDragEnd, isDragging, onSelectApp }) => {
+      const cardRef = React.useRef(null);
+
+      // Apply dragging class if the item is currently being dragged
+      // Card background is now slightly transparent dark for better visibility on light/dark themes
+      const cardClasses = `
+        bg-black bg-opacity-60 dark:bg-opacity-50 rounded-lg p-4 flex flex-col items-center justify-center h-28 w-28
+        transition transform hover:scale-105 duration-300 cursor-grab
+        ${isDragging ? 'dragging' : ''}
+      `;
+
+      return (
+        <a
+          ref={cardRef}
+          href={application.link.startsWith("#") ? application.link : "#"}
+          className={cardClasses}
+          draggable="true"
+          onDragStart={(e) => onDragStart(e, index)}
+          onDragOver={(e) => onDragOver(e, index)}
+          onDrop={(e) => onDrop(e, index)}
+          onDragLeave={(e) => onDragLeave(e)}
+          onDragEnd={(e) => onDragEnd(e)}
+          onClick={(e) => {
+            if (!application.link.startsWith("#")) {
+                e.preventDefault();
+                onSelectApp(application.id);
+            }
+          }}
+        >
+          <div className={`text-2xl ${application.bgColor} rounded-full p-4 text-white`}>
+            {application.icon}
+          </div>
+          {/* Text color for app name on card is always white for contrast against darkish card BG */}
+          <p className="text-xs mt-1 text-center text-white leading-tight">{application.name}</p>
+        </a>
+      );
+    };
+
+    // Login component for user authentication
+    const Login = ({ onLogin, theme }) => { // Pass theme to Login
+      const [email, setEmail] = React.useState("");
+      const [password, setPassword] = React.useState("");
+      const [error, setError] = React.useState("");
+      const [appUsers, setAppUsers] = React.useState([]);
+
+      React.useEffect(() => {
+        const storedUsersRaw = localStorage.getItem('users');
+        let usersToLoad = [];
+        let usersListModified = false;
+
+        if (storedUsersRaw) {
+          try {
+            const parsedUsers = JSON.parse(storedUsersRaw);
+            // Ensure all users have an allowedTools array, defaulting to empty if not present
+            usersToLoad = parsedUsers.map(u => ({ ...u, allowedTools: u.allowedTools || [] }));
+          } catch (e) {
+            console.error("Failed to parse stored users. Clearing and creating default admin.", e);
+            localStorage.removeItem('users'); // Clear corrupted data
+            // Fall through to create default admin by letting usersToLoad be empty
+            usersToLoad = [];
+          }
+        }
+
+        // If no users exist in localStorage (e.g., first run or cleared storage),
+        // create a default admin user.
+        if (usersToLoad.length === 0) {
+          console.warn("No users found in localStorage. Creating a default admin user (admin/admin123).");
+          const defaultAdminUser = {
+            username: "admin",
+            email: "admin@thegoodhealth.co.in",
+            password: "admin123", // Default password, should be changed by admin
+            allowedTools: defaultApplications.map(app => app.id) // Admin gets all tools
+          };
+          usersToLoad = [defaultAdminUser];
+          usersListModified = true; // Mark that the list was created/modified
+        } else {
+          // Ensure any existing admin user has all tools correctly assigned
+          let adminPermissionsCorrected = false;
+          usersToLoad = usersToLoad.map(user => {
+            if (user.username === 'admin') {
+              const adminAllTools = defaultApplications.map(app => app.id);
+              // Deep comparison for allowedTools
+              const toolsMatch = user.allowedTools &&
+                                 user.allowedTools.length === adminAllTools.length &&
+                                 adminAllTools.every(toolId => user.allowedTools.includes(toolId)) &&
+                                 user.allowedTools.every(toolId => adminAllTools.includes(toolId));
+
+              if (!toolsMatch) {
+                console.log("Correcting admin user's tool permissions in main app.");
+                adminPermissionsCorrected = true;
+                return { ...user, allowedTools: adminAllTools };
+              }
+            }
+            return user;
+          });
+          if (adminPermissionsCorrected) {
+            usersListModified = true;
+          }
+        }
+        
+        setAppUsers(usersToLoad);
+
+        if (usersListModified) {
+          localStorage.setItem('users', JSON.stringify(usersToLoad));
+        }
+      }, []); // Runs once on component mount
+
+      const handleLogin = (e) => {
+        e.preventDefault();
+        const user = appUsers.find(
+          (u) => (u.email === email || u.username === email) && u.password === password
+        );
+        if (user) {
+          // Ensure admin user loaded for login session has all tools
+          // This is also handled by App component's handleLogin, but good for consistency
+          if (user.username === 'admin') {
+            const adminUserWithAllTools = { ...user, allowedTools: defaultApplications.map(app => app.id) };
+            localStorage.setItem("currentUser", JSON.stringify(adminUserWithAllTools));
+            onLogin(adminUserWithAllTools);
+          } else {
+            localStorage.setItem("currentUser", JSON.stringify(user));
+            onLogin(user);
+          }
+        } else {
+          setError("Invalid email/username or password");
+        }
+      };
+
+      // Dynamic background for login based on theme
+      const loginBgClass = theme === 'dark'
+        ? 'bg-gradient-to-br from-gray-900 via-teal-900 to-gray-900'
+        : 'bg-gray-100'; // Lighter gray for light theme login
+
+      return (
+        <>
+          {/* Login header uses theme for its background */}
+          <div className={`fixed top-0 left-0 right-0 h-16 flex items-center px-6 shadow z-50 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-black'}`}>
+            <img
+              src="https://www.thegoodhealth.co.in/web/image/website/1/logo/www.thegoodhealth.co.in?unique=7145bcf"
+              alt="Logo"
+              className="h-10"
+            />
+          </div>
+          <div className={`flex items-center justify-center min-h-screen pt-16 ${loginBgClass}`}>
+            <div className={`p-8 rounded-lg shadow-xl w-full max-w-md mx-4 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+              <h2 className={`text-2xl mb-6 text-center ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Login</h2>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Email or Username"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`w-full p-3 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-500 dark:placeholder-gray-400 ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black border border-gray-300'}`}
+                  required
+                />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={`w-full p-3 rounded focus:outline-none focus:ring-2 focus:ring-teal-500 placeholder-gray-500 dark:placeholder-gray-400 ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-black border border-gray-300'}`}
+                  required
+                />
+                {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                <button
+                  type="submit"
+                  className="w-full p-3 bg-teal-500 text-white rounded hover:bg-teal-600 transition-colors duration-300 font-semibold"
+                >
+                  Login
+                </button>
+              </form>
+            </div>
+          </div>
+        </>
+      );
+    };
+
+    // Dashboard Content Component
+    const DashboardContent = ({ user, onSelectApp, theme }) => { // Pass theme here
+      const [userApplications, setUserApplications] = React.useState([]);
+      const [draggedItemIndex, setDraggedItemIndex] = React.useState(null);
+
+      const availableApplications = React.useMemo(() => {
+        if (!user) return [];
+        if (user.username === 'admin') {
+          // Admin should see all default applications, including userManagement
+          return defaultApplications;
+        }
+        // Non-admin users see tools based on their allowedTools and userManagement should not be listed unless explicitly assigned (which it isn't by default for non-admins)
+        return defaultApplications.filter(app =>
+            (user.allowedTools && user.allowedTools.includes(app.id)) && app.id !== 'userManagement' // Explicitly exclude userManagement for non-admins here
+        );
+      }, [user]);
+
+      React.useEffect(() => {
+        if (!user) return;
+        const storedOrderKey = `user_${user.username}_application_order`;
+        const storedOrder = localStorage.getItem(storedOrderKey);
+        let orderedApps = [...availableApplications];
+
+        if (storedOrder) {
+          try {
+            const orderedApplicationIds = JSON.parse(storedOrder);
+            const reordered = orderedApplicationIds
+              .map(id => availableApplications.find(app => app.id === id))
+              .filter(Boolean);
+            // const currentAvailableIds = availableApplications.map(app => app.id); // Not directly used
+            const newAppsNotInOrder = availableApplications.filter(app => !orderedApplicationIds.includes(app.id));
+            orderedApps = [...reordered, ...newAppsNotInOrder];
+          } catch (e) {
+            console.error("Failed to parse stored application order.", e);
+          }
+        }
+        setUserApplications(orderedApps);
+      }, [user, availableApplications]);
+
+      React.useEffect(() => {
+        if (userApplications.length > 0 && user) {
+          const applicationIds = userApplications.map(app => app.id);
+          localStorage.setItem(`user_${user.username}_application_order`, JSON.stringify(applicationIds));
+        }
+      }, [userApplications, user]);
+
+      const handleDragStart = (e, index) => { 
+        setDraggedItemIndex(index);
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", index.toString());
+      };
+      const handleDragOver = (e, index) => { 
+        e.preventDefault();
+        const targetElement = e.currentTarget;
+        if (targetElement && !targetElement.classList.contains('drag-over')) {
+          targetElement.classList.add('drag-over');
+        }
+      };
+      const handleDragLeave = (e) => { 
+        const targetElement = e.currentTarget;
+        if (targetElement) {
+          targetElement.classList.remove('drag-over');
+        }
+      };
+      const handleDrop = (e, targetIndex) => { 
+        e.preventDefault();
+        const targetElement = e.currentTarget;
+        if (targetElement) {
+          targetElement.classList.remove('drag-over');
+        }
+        const sourceIndexStr = e.dataTransfer.getData("text/plain");
+        if (!sourceIndexStr) return;
+        const sourceIndex = parseInt(sourceIndexStr, 10);
+        if (isNaN(sourceIndex) || sourceIndex === targetIndex || draggedItemIndex === null) {
+          setDraggedItemIndex(null);
+          return;
+        }
+        const newApplications = [...userApplications];
+        const [movedItem] = newApplications.splice(sourceIndex, 1);
+        newApplications.splice(targetIndex, 0, movedItem);
+        setUserApplications(newApplications);
+        setDraggedItemIndex(null);
+      };
+      const handleDragEnd = () => { 
+        setDraggedItemIndex(null);
+        document.querySelectorAll('.drag-over').forEach(card => card.classList.remove('drag-over'));
+      };
+
+      if (!user) return <p className={theme === 'dark' ? 'text-white' : 'text-black'}>Loading user data...</p>;
+
+      // Conditional class for welcome message based on theme
+      const welcomeTextClass = theme === 'dark' ? 'text-white' : 'text-black';
+
+      return (
+        <div className="max-w-5xl mx-auto px-4 w-full py-8">
+          <h2 className={`text-3xl font-bold mb-8 text-center ${welcomeTextClass}`}>Welcome back, {user.username}!</h2>
+          {userApplications.length === 0 ? (
+            <p className={`text-center text-lg ${welcomeTextClass}`}>You have no applications assigned. Please contact an administrator.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 justify-items-center">
+              {userApplications.map((application, index) => (
+                <ProjectCard
+                  key={application.id}
+                  application={application}
+                  index={index}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onDragLeave={handleDragLeave}
+                  onDragEnd={handleDragEnd}
+                  isDragging={draggedItemIndex === index}
+                  onSelectApp={onSelectApp}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // DynamicAppLoader component
+    const DynamicAppLoader = ({ appLink, theme }) => { // Pass theme
+        // Iframe container background matches the main app background
+        const iframeContainerBg = theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50';
+      return (
+        <div className={`iframe-container ${iframeContainerBg}`}>
+          <iframe src={appLink} title="Embedded Application" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+        </div>
+      );
+    };
+
+    // MainLayout component
+    const MainLayout = ({ user, onLogout, theme, toggleTheme }) => {
+      const [selectedAppId, setSelectedAppId] = React.useState(null);
+
+      const renderContent = () => {
+        const selectedApplication = defaultApplications.find(app => app.id === selectedAppId);
+
+        if (selectedApplication && selectedApplication.link && !selectedApplication.link.startsWith("#")) {
+          return <DynamicAppLoader appLink={selectedApplication.link} theme={theme} />; // Pass theme
+        }
+        return <DashboardContent user={user} onSelectApp={setSelectedAppId} theme={theme} />; // Pass theme
+      };
+
+      const shouldShowDashboard = !selectedAppId || (defaultApplications.find(app => app.id === selectedAppId)?.link.startsWith("#"));
+      
+      // Main layout background based on theme
+      const mainLayoutBgClass = theme === 'dark'
+        ? 'bg-gradient-to-br from-gray-900 via-teal-900 to-gray-900'
+        : 'bg-gray-50'; // Off-white for light theme
+
+      const mainContentTextColor = theme === 'dark' ? 'text-white' : 'text-black';
+
+      return (
+        <div className={`flex flex-col h-screen ${mainLayoutBgClass}`}>
+          <header className={`w-full h-16 flex items-center justify-between px-4 sm:px-6 shadow-md z-50
+                          ${theme === 'light' ? 'bg-white text-black' : 'bg-gray-900 text-white'}
+                          transition-colors duration-300`}>
+            <img
+              src="https://www.thegoodhealth.co.in/web/image/website/1/logo/www.thegoodhealth.co.in?unique=7145bcf"
+              alt="Logo"
+              className="h-8 sm:h-10"
+            />
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <span className={`hidden sm:inline ${theme === 'light' ? 'text-gray-700' : 'text-gray-300'}`}>Hi, {user.username}</span>
+              <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors duration-300">
+                <span className="text-xl">{theme === "light" ? "🌙" : "☀️"}</span>
+              </button>
+              <button
+                onClick={onLogout}
+                className="p-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-300 text-sm font-medium"
+              >
+                Logout
+              </button>
+            </div>
+          </header>
+
+          <main className={`relative flex-1 overflow-y-auto 
+                           ${shouldShowDashboard ? 'p-4' : ''} 
+                           flex items-stretch justify-center 
+                           ${mainContentTextColor}`}>
+
+            {selectedAppId && !defaultApplications.find(app => app.id === selectedAppId)?.link.startsWith("#") && (
+              <button
+                onClick={() => setSelectedAppId(null)}
+                className="absolute top-4 left-4 p-2 sm:p-3 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition shadow-lg z-20 text-sm sm:text-base"
+              >
+                ← Back to Dashboard
+              </button>
+            )}
+            {renderContent()}
+          </main>
+        </div>
+      );
+    };
+
+    // Main App component
+    const App = () => {
+      const [user, setUser] = React.useState(null);
+      const [theme, setTheme] = React.useState(() => localStorage.getItem('theme') || "dark");
+
+      const handleLogin = (loggedInUser) => {
+        // Ensure admin user structure is always correct upon login
+        if (loggedInUser.username === 'admin') {
+            const adminWithAllTools = { ...loggedInUser, allowedTools: defaultApplications.map(app => app.id) };
+            setUser(adminWithAllTools);
+            localStorage.setItem("currentUser", JSON.stringify(adminWithAllTools)); // Save corrected admin to currentUser
+        } else {
+            setUser(loggedInUser);
+            localStorage.setItem("currentUser", JSON.stringify(loggedInUser));
+        }
+      };
+
+      const handleLogout = () => {
+        localStorage.removeItem("currentUser");
+        setUser(null);
+      };
+
+      const toggleTheme = () => {
+        const newTheme = theme === "dark" ? "light" : "dark";
+        setTheme(newTheme);
+        localStorage.setItem('theme', newTheme);
+      };
+
+      React.useEffect(() => {
+        document.documentElement.classList.toggle("dark", theme === "dark");
+        document.body.className = theme === "dark"
+          ? "bg-gray-900" 
+          : "bg-gray-50";   
+      }, [theme]);
+
+      React.useEffect(() => {
+        const storedUser = localStorage.getItem("currentUser");
+        if (storedUser) {
+          try {
+            const parsedUser = JSON.parse(storedUser);
+             // Ensure admin loaded from session has all tools correctly
+             if (parsedUser.username === 'admin') {
+                const adminUser = { ...parsedUser, allowedTools: defaultApplications.map(app => app.id) };
+                setUser(adminUser);
+                 // Optionally, resave currentUser if it was corrected, though login also does this
+                 if(JSON.stringify(parsedUser) !== JSON.stringify(adminUser)) {
+                    localStorage.setItem("currentUser", JSON.stringify(adminUser));
+                 }
+            } else {
+                setUser(parsedUser);
+            }
+          } catch (e) {
+            console.error("Failed to parse stored user, logging out.", e);
+            localStorage.removeItem("currentUser");
+            setUser(null); // Ensure user state is cleared
+          }
+        }
+      }, []);
+
+      return (
+        <>
+          {user ? (
+            <MainLayout user={user} onLogout={handleLogout} theme={theme} toggleTheme={toggleTheme} />
+          ) : (
+            <Login onLogin={handleLogin} theme={theme} />
+          )}
+        </>
+      );
+    };
+
+    // Render the App
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
